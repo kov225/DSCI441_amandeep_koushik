@@ -1,5 +1,10 @@
 """
-Defines the 7 ML models and the training logic.
+Model Definition and Training Orchestration Module
+
+This module defines the architectural suite of classical machine learning models 
+used for benchmarking. It provides factory methods for model instantiation with 
+reproducibility controls and a unified training loop that handles model fitting 
+and exception management during the learning phase.
 """
 
 from sklearn.naive_bayes import GaussianNB
@@ -10,7 +15,19 @@ from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier,
 
 def get_models(random_state=42):
     """
-    Returns a dictionary of the 7 classical ML models we're evaluating.
+    Instantiates a diverse collection of seven classical machine learning models.
+
+    The selection includes models with various inductive biases (e.g., linear models, 
+    kernel methods, and tree-based ensembles) to provide a comprehensive 
+    cross-section of algorithmic robustness. All models requiring stochastic 
+    initialization are anchored with a fixed random state.
+
+    Args:
+        random_state (int): The seed used for reproducible model initialization.
+
+    Returns:
+        dict: A dictionary mapping canonical model names (str) to un-fitted 
+              scikit-learn model instances.
     """
     models = {
         "Naïve Bayes": GaussianNB(),
@@ -25,16 +42,31 @@ def get_models(random_state=42):
 
 def train_models(models, X_train, y_train):
     """
-    Loops through the model dictionary and fits each one to the training data.
+    Executes the training phase for a provided collection of machine learning models.
+
+    This function iterates through the model repository and fits each instance 
+    to the training data. It includes per-model exception handling to prevent 
+    divergent models (e.g., convergence failures) from aborting the entire 
+    experimental pipeline.
+
+    Args:
+        models (dict): Mapping of model names to un-fitted model instances.
+        X_train (np.ndarray): The training feature matrix.
+        y_train (np.ndarray): The target label vector.
+
+    Returns:
+        dict: A dictionary containing only the models that were successfully trained.
     """
-    print("Training models... This might take a bit (SVM is usually the slowest).")
+    print("Beginning model training. Note: Support Vector Machine (SVM) fitting "
+          "runtime is significantly higher than other models in this suite.")
     trained_models = {}
     for name, model in models.items():
-        print(f"Training {name}...")
+        print(f"Fitting {name}...")
         try:
             model.fit(X_train, y_train)
             trained_models[name] = model
         except Exception as e:
-            print(f"Failed to train {name}: {e}")
-    print("Done. All models are trained.")
+            # We log failures instead of raising to allow remaining models to be evaluated
+            print(f"Critical failure during training of {name}: {e}")
+    print("Model training phase complete.")
     return trained_models

@@ -1,6 +1,10 @@
 """
-Loads and prepares the UCI Adult Income data. 
-Has a synthetic fallback if the online download fails.
+Data Loading and Preprocessing Module
+
+This module provides functionality to fetch the UCI Adult Income dataset from OpenML.
+It includes a robust preprocessing pipeline using scikit-learn Transformers and 
+a synthetic data fallback mechanism to ensure the experimental pipeline remains 
+executable even without an active network connection.
 """
 
 import pandas as pd
@@ -15,22 +19,42 @@ import warnings
 
 def load_and_preprocess_data(test_size=0.2, random_state=42):
     """
-    Fetches the Adult dataset and applies standard scaling and encoding.
+    Loads the UCI Adult Income dataset and applies a standardized preprocessing pipeline.
+
+    The function attempts to retrieve the dataset from OpenML. If the request fails, 
+    it generates a synthetic dataset with similar class imbalances to maintain 
+    consistent experimental conditions. Preprocessing includes median imputation 
+    for missing values, standard scaling for continuous features, and one-hot 
+    encoding for categorical variables.
+
+    Args:
+        test_size (float): The proportion of the dataset to include in the test split.
+        random_state (int): Seed used by the random number generator for reproducibility.
+
+    Returns:
+        tuple: A tuple containing:
+            - X_train_processed (np.ndarray): Preprocessed training features.
+            - X_test_processed (np.ndarray): Preprocessed testing features.
+            - y_train (np.ndarray): Training labels.
+            - y_test (np.ndarray): Testing labels.
+            - continuous_indices (list): List of column indices for continuous features.
+            - preprocessor (ColumnTransformer): The fitted transformer object.
     """
     try:
-        print("Grabbing UCI data from OpenML...")
+        print("Requesting UCI Adult Income Dataset (OpenML ID: 1590)...")
+        # auto parser is used to handle categorical types natively in recent sklearn versions
         adult = fetch_openml(data_id=1590, as_frame=True, parser="auto")
         X = adult.data
-        # Label is 1 for >50K, 0 otherwise
+        # We convert the target to binary integers to facilitate metric calculations like Brier Score
         y = (adult.target == '>50K').astype(int) 
         
-        # Sort features into categories
+        # Categorical and continuous features require distinct transformation strategies
         categorical_cols = X.select_dtypes(include=['category', 'object']).columns.tolist()
         continuous_cols = X.select_dtypes(include=['int64', 'float64']).columns.tolist()
         
     except Exception as e:
-        warnings.warn(f"OpenML fetch failed ({e}). Falling back to synthetic data.")
-        print("Generating synthetic dataset...")
+        # Fallback is necessary to allow offline development and testing
+        warnings.warn(f"Dataset fetch failed: {e}. Utilizing synthetic classification data.")
         X, y = make_classification(
             n_samples=10000, 
             n_features=14, 
@@ -44,13 +68,13 @@ def load_and_preprocess_data(test_size=0.2, random_state=42):
         categorical_cols = []
         continuous_cols = X.columns.tolist()
 
-    # Numeric pipeline: fill missing and scale
+    # Median imputation is used for robustness against outliers in continuous features
     numeric_transformer = Pipeline(steps=[
         ('imputer', SimpleImputer(strategy='median')),
         ('scaler', StandardScaler())
     ])
 
-    # Categorical pipeline: fill missing and encode
+    # handle_unknown='ignore' ensures the encoder doesn't crash on unseen categories in the test set
     categorical_transformer = Pipeline(steps=[
         ('imputer', SimpleImputer(strategy='most_frequent')),
         ('onehot', OneHotEncoder(handle_unknown='ignore', sparse_output=False))
@@ -63,16 +87,16 @@ def load_and_preprocess_data(test_size=0.2, random_state=42):
         ]
     )
 
-    # Standard split with stratification to preserve class ratios
+    # Stratified split ensures that the class distribution is preserved across subsets
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=test_size, random_state=random_state, stratify=y
     )
 
-    # Process everything
+    # Fitting on train and transforming test prevents data leakage
     X_train_processed = preprocessor.fit_transform(X_train)
     X_test_processed = preprocessor.transform(X_test)
     
-    # Track continuous column indices (they appear first after transformation)
+    # We identify continuous indices because covariate shift simulation specifically targets them
     num_continuous = len(continuous_cols)
     continuous_indices = list(range(num_continuous))
 
