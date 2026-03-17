@@ -2,7 +2,7 @@
 
 This research project investigates the resilience of classical machine learning models under three distinct categories of distribution change. Using the UCI Adult Income dataset, we quantify performance degradation as a function of shift intensity to identify inherent algorithmic vulnerabilities.
 
-**Status**: Milestone 1 Complete.
+
 
 ---
 
