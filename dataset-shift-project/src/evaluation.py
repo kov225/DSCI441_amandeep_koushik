@@ -10,72 +10,129 @@ features to guide concept-adjacent shift simulations.
 import pandas as pd
 import numpy as np
 from sklearn.metrics import accuracy_score, f1_score, roc_auc_score, brier_score_loss
+import sys
+import os
+
+# We insert the local directory to the front of the path to ensure that our 
+# local 'statistics.py' is prioritized over the Python standard library.
+sys.path.insert(0, os.path.dirname(__file__))
+import statistics
+
+# We use a module-level cache to store the uncorrupted baseline dataset.
+# This allows us to compare shifted distributions against the original without 
+# modifying the primary experimental pipeline signature.
+_BASELINE_X_CACHE = None
+
+def _calculate_metrics(y_true, y_pred, y_prob, has_multiple_classes):
+    """
+    Internal helper to calculate a bundle of metrics for a single sample.
+    """
+    acc = accuracy_score(y_true, y_pred)
+    f1 = f1_score(y_true, y_pred, average='weighted', zero_division=0)
+    
+    if has_multiple_classes:
+        try:
+            roc_auc = roc_auc_score(y_true, y_prob)
+        except ValueError:
+            roc_auc = np.nan
+    else:
+        roc_auc = np.nan
+        
+    try:
+        brier = brier_score_loss(y_true, y_prob)
+    except ValueError:
+        brier = np.nan
+        
+    return acc, f1, roc_auc, brier
 
 def evaluate_models(trained_models, X_test, y_test, shift_type="None", intensity=0.0):
     """
-    Evaluates a collection of trained models on a specified test dataset.
+    Evaluates a collection of trained models with statistical bootstrapping.
 
-    This function iterates through a dictionary of models, generating predictions 
-    and probability estimates. It calculates a standardized suite of metrics 
-    including Accuracy, Weighted F1-Score, ROC-AUC, and Brier Score. Logic is 
-    included to handle edge cases such as single-class test sets and models 
-    losing probabilistic output capability.
+    This function quantifying model performance while providing confidence 
+    intervals for all metrics. It also calculates the Kolmogorov-Smirnov 
+    statistic to measure the physical divergence of the input features relative 
+    to the baseline distribution.
 
     Args:
-        trained_models (dict): Mapping of model names (str) to fitted model instances.
+        trained_models (dict): Mapping of model names to fitted instances.
         X_test (np.ndarray): The feature matrix for evaluation.
         y_test (np.ndarray): The ground truth labels.
-        shift_type (str): The name of the dataset shift applied (for recording).
-        intensity (float): The magnitude of the shift applied (for recording).
+        shift_type (str): The name of the dataset shift applied.
+        intensity (float): The magnitude of the shift applied.
 
     Returns:
-        pd.DataFrame: A DataFrame where each row corresponds to a model's performance 
-                      metrics under the specified experiment conditions.
+        pd.DataFrame: A DataFrame containing metrics, confidence intervals, 
+                      and distribution shift statistics.
     """
+    global _BASELINE_X_CACHE
     results = []
     
-    # ROC AUC calculation requires at least one sample from each class (0 and 1)
+    # We cache the very first clean test set encountered to serve as the reference 
+    # point for all future KS test comparisons.
+    if _BASELINE_X_CACHE is None and (intensity == 0.0 or shift_type == "Baseline"):
+        _BASELINE_X_CACHE = X_test.copy()
+    
+    # Calculate distribution shift using the statistics module
+    ks_results = statistics.calculate_feature_drift(
+        _BASELINE_X_CACHE, X_test, list(range(X_test.shape[1]))
+    )
+    
     has_multiple_classes = len(np.unique(y_test)) > 1
+    n_iterations = 100
     
     for name, model in trained_models.items():
+        # Baseline point estimates
         y_pred = model.predict(X_test)
-        
-        # Probabilistic metrics require class probabilities; we fallback to decision 
-        # functions or hard predictions if probability mapping is unavailable.
         if hasattr(model, "predict_proba"):
             y_prob = model.predict_proba(X_test)[:, 1]
         elif hasattr(model, "decision_function"):
-            # Simple sigmoid transformation serves as a probability approximation
             decision = model.decision_function(X_test)
             y_prob = 1 / (1 + np.exp(-decision)) 
         else:
             y_prob = y_pred
             
-        acc = accuracy_score(y_test, y_pred)
-        # Weighted F1 accounts for class imbalance prevalent in the Adult dataset
-        f1 = f1_score(y_test, y_pred, average='weighted', zero_division=0)
+        point_acc, point_f1, point_roc, point_brier = _calculate_metrics(
+            y_test, y_pred, y_prob, has_multiple_classes
+        )
         
-        if has_multiple_classes:
-            try:
-                roc_auc = roc_auc_score(y_test, y_prob)
-            except ValueError:
-                roc_auc = np.nan
-        else:
-            roc_auc = np.nan
+        # Bootstrapping loop for uncertainty quantification
+        boot_acc, boot_f1, boot_roc, boot_brier = [], [], [], []
+        indices = np.arange(len(y_test))
+        
+        for _ in range(n_iterations):
+            # Resampling with replacement simulates multiple draws from the same population
+            resample_idx = np.random.choice(indices, size=len(indices), replace=True)
+            y_true_b = y_test[resample_idx]
+            y_pred_b = y_pred[resample_idx]
+            y_prob_b = y_prob[resample_idx]
             
-        try:
-            brier = brier_score_loss(y_test, y_prob)
-        except ValueError:
-            brier = np.nan
+            # Metric check for single-class resamples to prevent calculation errors
+            b_multi = len(np.unique(y_true_b)) > 1
+            a, f, r, b = _calculate_metrics(y_true_b, y_pred_b, y_prob_b, b_multi)
+            
+            boot_acc.append(a)
+            boot_f1.append(f)
+            boot_roc.append(r)
+            boot_brier.append(b)
             
         results.append({
             "Model": name,
             "Shift_Type": shift_type,
             "Intensity": intensity,
-            "Accuracy": acc,
-            "F1_Score": f1,
-            "ROC_AUC": roc_auc,
-            "Brier_Score": brier
+            "Accuracy": point_acc,
+            "Accuracy_Lower_CI": np.nanpercentile(boot_acc, 2.5),
+            "Accuracy_Upper_CI": np.nanpercentile(boot_acc, 97.5),
+            "F1_Score": point_f1,
+            "F1_Lower_CI": np.nanpercentile(boot_f1, 2.5),
+            "F1_Upper_CI": np.nanpercentile(boot_f1, 97.5),
+            "ROC_AUC": point_roc,
+            "ROC_Lower_CI": np.nanpercentile(boot_roc, 2.5),
+            "ROC_Upper_CI": np.nanpercentile(boot_roc, 97.5),
+            "Brier_Score": point_brier,
+            "Brier_Lower_CI": np.nanpercentile(boot_brier, 2.5),
+            "Brier_Upper_CI": np.nanpercentile(boot_brier, 97.5),
+            "KS_Statistic": ks_results["avg_ks"]
         })
         
     return pd.DataFrame(results)

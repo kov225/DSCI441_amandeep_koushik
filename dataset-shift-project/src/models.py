@@ -12,15 +12,16 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, AdaBoostClassifier
+from sklearn.dummy import DummyClassifier
 
 def get_models(random_state=42):
     """
-    Instantiates a diverse collection of seven classical machine learning models.
+    Instantiates a diverse collection of classical machine learning models.
 
     The selection includes models with various inductive biases (e.g., linear models, 
-    kernel methods, and tree-based ensembles) to provide a comprehensive 
-    cross-section of algorithmic robustness. All models requiring stochastic 
-    initialization are anchored with a fixed random state.
+    kernel methods, and tree-based ensembles) and an explicit naive baseline 
+    (DummyClassifier). This provides a comprehensive cross-section of algorithmic 
+    robustness and a point of comparison for naive performance.
 
     Args:
         random_state (int): The seed used for reproducible model initialization.
@@ -30,6 +31,7 @@ def get_models(random_state=42):
               scikit-learn model instances.
     """
     models = {
+        "Naive Baseline": DummyClassifier(strategy="most_frequent"),
         "Naïve Bayes": GaussianNB(),
         "Logistic Regression": LogisticRegression(max_iter=1000, random_state=random_state),
         "SVM (RBF)": SVC(kernel='rbf', probability=True, random_state=random_state),
