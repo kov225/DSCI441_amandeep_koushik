@@ -1,39 +1,29 @@
-# Dataset Shift: Classical ML Robustness Analysis
+# Dataset Shift: Assessing Model Robustness to Environmental Change
 
-This research project investigates the resilience of classical machine learning models under three distinct categories of distribution change. Using the UCI Adult Income dataset, we quantify performance degradation as a function of shift intensity to identify inherent algorithmic vulnerabilities.
+This repository contains a longitudinal study on the performance degradation of classical machine learning algorithms under various dataset shift regimes. Developed as part of a Machine Learning course project, the study quantifies model resilience using statistical benchmarks and divergence metrics.
 
-
+**Current Project Phase**: Milestone 1 (Statistical Baselines & Benchmarking)
 
 ---
 
-## Milestone 2 Upgrade Plan
+## Technical Overview
+The project evaluates **seven classical ML architectures** against a **Naive Baseline** (`DummyClassifier`) to determine their inherent stability when the i.i.d. assumption is violated. We utilize the UCI Adult Income dataset to simulate environmental drift through controlled feature and label corruption.
 
-### 1. Deeper Shift Simulation
-Upgrade simulations to represent more realistic environmental challenges:
-- **Covariate Shift**: Add feature scaling drift as a separate experiment from noise injection to distinguish between precision loss and distribution bias.
-- **Prior Shift**: Currently only drops minority samples. Add the reverse — oversample majority to see asymmetric effects.
-- **Concept Shift**: Upgrade to feature permutation (shuffle values between samples) instead of random noise injection for more realistic corruption.
+### Key Deliverables
+- **Statistical Benchmarking**: Inclusion of a majority-class baseline to provide a performance floor.
+- **Uncertainty Quantification**: Implementation of statistical bootstrapping (95% CI) for all accuracy and calibration metrics.
+- **Divergence Monitoring**: Integration of the Kolmogorov-Smirnov (KS) test to quantify physical data shift magnitude.
+- **Interactive Dashboard**: A Streamlit application for multi-dimensional visualization of performance decay.
 
-### 2. Robustness Scoring
-Transition from raw performance tracking to a unified robustness metric:
-- **`robustness_score()`**: Calculation of the AUC degradation rate per unit of shift intensity. This enables objective ranking of models by their "Resilience Factor."
+## Project Structure
+The repository is organized into a modular package structure:
+- `dataset-shift-project/`: The core research directory.
+  - `src/`: Source code for simulators, models, and evaluation routines.
+  - `results/`: Historical benchmark data and statistical logs.
+  - `app.py`: Interface for the research dashboard.
 
-### 3. Interpretability Layer
-A dedicated `interpretability.py` module to analyze why models fail:
-- **Feature Importance Drifts**: Analysis of rank changes before vs. after shift.
-- **Decision Boundary Visualization**: 2D projections showing how separation hyperplanes collapse.
-- **Confidence Distribution**: Quantifying model calibration and overconfidence during degradation.
-
-### 4. Statistical Validation
-Moving beyond single-point estimates to defensible results:
-- **Multi-seed Cross-validation**: Aggregating results across 3–5 random seeds.
-- **Error bands**: Visualizing variance on performance curves to ensure results are defensible.
-
-### 5. Streamlit App Upgrade
-Evolution of the UI into a research dashboard with three functional tabs:
-- **Tab 1: Explorer**: Polished distribution visualizer.
-- **Tab 2: Robustness Leaderboard**: Ranked comparison highlighting the "Best-in-Class" model per shift type.
-- **Tab 3: Model Insights**: Interactive inspection of failure modes (Boundaries, Confidence, Importance).
-
-### 6. Automated Reporting
-- **Auto-save Figures**: Automatically export all benchmark plots to `figures/` for use in technical posters and reports.
+## Next Steps: Milestone 2 Plan
+The upcoming phase transitions from benchmarking to diagnostic analysis:
+1. **Deeper Shift Simulation**: Scaling drift and feature value permutation.
+2. **Robustness Scoring**: Unified ranking system based on AUC degradation rates.
+3. **Interpretability**: Analysis of feature importance drift and decision boundary collapse.

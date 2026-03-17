@@ -18,10 +18,10 @@ import os
 sys.path.insert(0, os.path.dirname(__file__))
 import statistics
 
-# We use a module-level cache to store the uncorrupted baseline dataset.
-# This allows us to compare shifted distributions against the original without 
-# modifying the primary experimental pipeline signature.
+# We use module-level caches to store the uncorrupted baseline data and its performance.
+# This allows us to compare shifted distributions against the original.
 _BASELINE_X_CACHE = None
+_BASELINE_METRICS_CACHE = {} # Maps model names to their baseline bootstrapped accuracies
 
 def _calculate_metrics(y_true, y_pred, y_prob, has_multiple_classes):
     """
@@ -65,12 +65,13 @@ def evaluate_models(trained_models, X_test, y_test, shift_type="None", intensity
         pd.DataFrame: A DataFrame containing metrics, confidence intervals, 
                       and distribution shift statistics.
     """
-    global _BASELINE_X_CACHE
+    global _BASELINE_X_CACHE, _BASELINE_METRICS_CACHE
     results = []
     
     # We cache the very first clean test set encountered to serve as the reference 
-    # point for all future KS test comparisons.
-    if _BASELINE_X_CACHE is None and (intensity == 0.0 or shift_type == "Baseline"):
+    # point for all future comparisons.
+    is_baseline = (intensity == 0.0 or shift_type == "Baseline")
+    if _BASELINE_X_CACHE is None and is_baseline:
         _BASELINE_X_CACHE = X_test.copy()
     
     # Calculate distribution shift using the statistics module
@@ -116,6 +117,22 @@ def evaluate_models(trained_models, X_test, y_test, shift_type="None", intensity
             boot_roc.append(r)
             boot_brier.append(b)
             
+        # Store baseline accuracies for future hypothesis testing
+        if is_baseline:
+            _BASELINE_METRICS_CACHE[name] = boot_acc
+            p_val = np.nan
+            significant = False
+        else:
+            # Shifted vs Baseline Hypothesis Testing
+            baseline_dist = _BASELINE_METRICS_CACHE.get(name, [])
+            if baseline_dist:
+                hr = statistics.perform_hypothesis_test(baseline_dist, boot_acc)
+                p_val = hr["p_value"]
+                significant = hr["significant"]
+            else:
+                p_val = np.nan
+                significant = False
+
         results.append({
             "Model": name,
             "Shift_Type": shift_type,
@@ -132,7 +149,9 @@ def evaluate_models(trained_models, X_test, y_test, shift_type="None", intensity
             "Brier_Score": point_brier,
             "Brier_Lower_CI": np.nanpercentile(boot_brier, 2.5),
             "Brier_Upper_CI": np.nanpercentile(boot_brier, 97.5),
-            "KS_Statistic": ks_results["avg_ks"]
+            "KS_Statistic": ks_results["avg_ks"],
+            "P_Value": p_val,
+            "Significant_Shift": significant
         })
         
     return pd.DataFrame(results)

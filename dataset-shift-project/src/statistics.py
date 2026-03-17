@@ -45,3 +45,51 @@ def calculate_feature_drift(X_baseline, X_shifted, feature_indices):
         "avg_ks": avg_ks,
         "max_ks": max_ks
     }
+
+def demonstrate_clt(data, n_samples=100, sample_size=30):
+    """
+    Demonstrates the Central Limit Theorem using model performance samples.
+    
+    CLT states that the distribution of sample means will be approximately normal, 
+    regardless of the underlying distribution, as sample size increases.
+    """
+    sample_means = []
+    for _ in range(n_samples):
+        sample = np.random.choice(data, size=sample_size, replace=True)
+        sample_means.append(np.mean(sample))
+    
+    return {
+        "mean_of_means": np.mean(sample_means),
+        "std_of_means": np.std(sample_means),
+        "sample_means": sample_means
+    }
+
+def demonstrate_lln(data, max_samples=1000):
+    """
+    Demonstrates the Law of Large Numbers.
+    
+    LLN states that as the number of trials increases, the actual ratio of outcomes 
+    will converge on the theoretical, or expected, ratio of outcomes.
+    """
+    running_means = []
+    for i in range(1, max_samples + 1):
+        running_means.append(np.mean(data[:i]))
+    
+    return running_means
+
+def perform_hypothesis_test(baseline_metrics, shifted_metrics):
+    """
+    Performs a t-test to determine if the performance drop is statistically significant.
+    
+    H0: There is no difference in mean performance.
+    Ha: The mean performance of the shifted data is lower than the baseline.
+    """
+    from scipy.stats import ttest_ind
+    
+    stat, p_val = ttest_ind(baseline_metrics, shifted_metrics, alternative='greater')
+    
+    return {
+        "t_statistic": stat,
+        "p_value": p_val,
+        "significant": p_val < 0.05
+    }
