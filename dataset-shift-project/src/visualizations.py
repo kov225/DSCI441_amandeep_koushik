@@ -99,6 +99,13 @@ def plot_performance_curves(
     Returns:
         matplotlib Figure.
     """
+    if metric not in results_df.columns:
+        fig, ax = plt.subplots(figsize=(11, 6))
+        ax.text(0.5, 0.5, f"{metric} column not found.\nPlease run the M2 pipeline.",
+                ha="center", va="center", transform=ax.transAxes, color="#e0e0e0")
+        _apply_dark_spine(ax)
+        return fig
+
     df = _prepare_with_baseline(results_df, shift_type)
     df = df.sort_values("Intensity")
     models = df["Model"].unique()
@@ -150,6 +157,13 @@ def plot_model_heatmap(
     Returns:
         matplotlib Figure.
     """
+    if metric not in results_df.columns:
+        fig, ax = plt.subplots(figsize=(10, 5))
+        ax.text(0.5, 0.5, f"{metric} column not found.\nPlease run the M2 pipeline.",
+                ha="center", va="center", transform=ax.transAxes, color="#e0e0e0")
+        _apply_dark_spine(ax)
+        return fig
+
     df = _prepare_with_baseline(results_df, shift_type)
     pivot = df.pivot_table(index="Model", columns="Intensity",
                            values=metric, aggfunc="mean")
@@ -191,6 +205,13 @@ def plot_robustness_ranking(
     Returns:
         matplotlib Figure.
     """
+    if "Robustness_Score" not in results_df.columns:
+        fig, ax = plt.subplots()
+        ax.text(0.5, 0.5, "Robustness_Score column not found.\nPlease run the M2 pipeline.",
+                ha="center", va="center", transform=ax.transAxes, color="#e0e0e0")
+        _apply_dark_spine(ax)
+        return fig
+
     df = results_df[
         (results_df["Shift_Type"] == shift_type) &
         (results_df["Intensity"] > 0.0)
@@ -279,6 +300,13 @@ def plot_ks_psi_curves(
     Returns:
         matplotlib Figure with two vertically stacked subplots.
     """
+    if "Avg_KS_Statistic" not in results_df.columns or "Avg_PSI" not in results_df.columns:
+        fig, ax = plt.subplots(figsize=(10, 4))
+        ax.text(0.5, 0.5, "KS/PSI columns not found.\nPlease run the M2 pipeline.",
+                ha="center", va="center", transform=ax.transAxes, color="#e0e0e0")
+        _apply_dark_spine(ax)
+        return fig
+
     df = _prepare_with_baseline(results_df, shift_type)
     df = df.sort_values("Intensity")
     models = df["Model"].unique()
@@ -338,6 +366,13 @@ def plot_confidence_band(
     Returns:
         matplotlib Figure.
     """
+    if metric not in results_df.columns:
+        fig, ax = plt.subplots(figsize=(9, 5))
+        ax.text(0.5, 0.5, f"{metric} column not found.\nPlease run the M2 pipeline.",
+                ha="center", va="center", transform=ax.transAxes, color="#e0e0e0")
+        _apply_dark_spine(ax)
+        return fig
+
     df = _prepare_with_baseline(results_df, shift_type)
     mdf = df[df["Model"] == model_name].sort_values("Intensity")
 
