@@ -12,10 +12,7 @@ import logging
 import numpy as np
 
 
-# ---------------------------------------------------------------------------
 # Logging
-# ---------------------------------------------------------------------------
-
 def get_logger(name: str = "shift_study") -> logging.Logger:
     """
     Returns a consistently formatted logger for the given module name.
@@ -42,10 +39,7 @@ def get_logger(name: str = "shift_study") -> logging.Logger:
     return logger
 
 
-# ---------------------------------------------------------------------------
 # Reproducibility
-# ---------------------------------------------------------------------------
-
 def set_global_seed(seed: int = 42) -> None:
     """
     Seeds NumPy's global random state for cross-module reproducibility.
@@ -56,10 +50,7 @@ def set_global_seed(seed: int = 42) -> None:
     np.random.seed(seed)
 
 
-# ---------------------------------------------------------------------------
 # Path Management
-# ---------------------------------------------------------------------------
-
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
 
@@ -84,10 +75,7 @@ def get_outputs_path(filename: str) -> str:
     return os.path.join(outputs_dir, filename)
 
 
-# ---------------------------------------------------------------------------
 # Population Stability Index (PSI)
-# ---------------------------------------------------------------------------
-
 def compute_psi(expected: np.ndarray, actual: np.ndarray, n_bins: int = 10) -> float:
     """
     Computes the Population Stability Index between two univariate distributions.

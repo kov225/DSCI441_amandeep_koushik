@@ -43,10 +43,7 @@ CI_LOWER = 2.5
 CI_UPPER = 97.5
 
 
-# ---------------------------------------------------------------------------
 # Baseline State Container
-# ---------------------------------------------------------------------------
-
 class EvaluationContext:
     """
     Carries the baseline (clean) distribution and performance across the
@@ -71,10 +68,7 @@ class EvaluationContext:
         return self.baseline_X is not None
 
 
-# ---------------------------------------------------------------------------
 # Internal Helpers
-# ---------------------------------------------------------------------------
-
 def _predict(model, X: np.ndarray) -> tuple:
     """
     Produces class predictions and calibrated probability estimates for a
@@ -163,10 +157,7 @@ def _ci(values: list) -> tuple:
     return (np.nanpercentile(arr, CI_LOWER), np.nanpercentile(arr, CI_UPPER))
 
 
-# ---------------------------------------------------------------------------
 # Robustness Score
-# ---------------------------------------------------------------------------
-
 def compute_robustness_score(
     baseline_acc: float,
     shifted_acc: float,
@@ -214,10 +205,7 @@ def compute_relative_drop(baseline_acc: float, shifted_acc: float) -> float:
     return float((baseline_acc - shifted_acc) / baseline_acc * 100.0)
 
 
-# ---------------------------------------------------------------------------
 # Main Evaluation Function
-# ---------------------------------------------------------------------------
-
 def evaluate_models(
     trained_models: dict,
     X_test: np.ndarray,
@@ -345,10 +333,7 @@ def evaluate_models(
     return pd.DataFrame(rows)
 
 
-# ---------------------------------------------------------------------------
 # Feature Importance Helper
-# ---------------------------------------------------------------------------
-
 def get_top_n_features(X_train: np.ndarray, y_train: np.ndarray,
                         n: int = 5) -> list:
     """

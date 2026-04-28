@@ -23,10 +23,7 @@ import numpy as np
 from copy import deepcopy
 
 
-# ---------------------------------------------------------------------------
 # A. Covariate Shift
-# ---------------------------------------------------------------------------
-
 def apply_covariate_shift(
     X: np.ndarray,
     continuous_indices: list,
@@ -101,10 +98,7 @@ def apply_feature_scaling_drift(
     return X_out
 
 
-# ---------------------------------------------------------------------------
 # B. Label Shift (Prior Probability Shift)
-# ---------------------------------------------------------------------------
-
 def apply_label_shift(
     X: np.ndarray,
     y: np.ndarray,
@@ -151,10 +145,7 @@ def apply_label_shift(
     return X[all_idx], y[all_idx]
 
 
-# ---------------------------------------------------------------------------
 # C. Concept Drift
-# ---------------------------------------------------------------------------
-
 def apply_concept_drift(
     X: np.ndarray,
     y: np.ndarray,
@@ -204,10 +195,7 @@ def apply_concept_drift(
     return X_out, y_out
 
 
-# ---------------------------------------------------------------------------
 # D. Noise Corruption
-# ---------------------------------------------------------------------------
-
 def apply_gaussian_noise(
     X: np.ndarray,
     continuous_indices: list,
@@ -240,10 +228,7 @@ def apply_gaussian_noise(
     return X_out
 
 
-# ---------------------------------------------------------------------------
 # E. Missingness Shift
-# ---------------------------------------------------------------------------
-
 def apply_mcar_missingness(
     X: np.ndarray,
     intensity: float = 0.0,
@@ -316,10 +301,7 @@ def apply_mar_missingness(
     return X_out
 
 
-# ---------------------------------------------------------------------------
 # F. Feature Removal
-# ---------------------------------------------------------------------------
-
 def apply_feature_removal(
     X: np.ndarray,
     feature_indices: list,

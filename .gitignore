@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+*.pyo
+
+*.log
+.DS_Store
+.ipynb_checkpoints/
+
+dataset-shift-project/results/run.log
+dataset-shift-project/results/streamlit.log
+
+.vscode/
+.idea/
+
+dataset-shift-project/figures/
+dataset-shift-project/outputs/

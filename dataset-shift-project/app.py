@@ -29,9 +29,7 @@ from visualizations import (
     plot_relative_drop_heatmap,
 )
 
-# ---------------------------------------------------------------------------
 # Page config
-# ---------------------------------------------------------------------------
 st.set_page_config(
     page_title="Dataset Shift Explorer",
     page_icon="📊",
@@ -39,9 +37,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ---------------------------------------------------------------------------
 # Custom CSS  dark card look, brand colours
-# ---------------------------------------------------------------------------
 st.markdown("""
 <style>
     /* Main background */
@@ -107,9 +103,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# ---------------------------------------------------------------------------
 # Data loading
-# ---------------------------------------------------------------------------
 RESULTS_PATH = os.path.join(os.path.dirname(__file__), "results",
                              "experiment_results.csv")
 
@@ -123,9 +117,7 @@ def load_results():
 
 df_raw = load_results()
 
-# ---------------------------------------------------------------------------
 # Header
-# ---------------------------------------------------------------------------
 st.markdown(
     "<h1 style='color:#e2e8f0;font-size:2rem;font-weight:700;margin-bottom:4px'>"
     "📊 Dataset Shift Explorer</h1>"
@@ -145,9 +137,7 @@ if df_raw is None:
     )
     st.stop()
 
-# ---------------------------------------------------------------------------
 # Sidebar controls
-# ---------------------------------------------------------------------------
 with st.sidebar:
     st.markdown(
         "<div style='color:#60a5fa;font-weight:700;font-size:1.05rem;"
@@ -195,9 +185,7 @@ with st.sidebar:
     )
 
 
-# ---------------------------------------------------------------------------
 # Filtered data helpers
-# ---------------------------------------------------------------------------
 lo_int, hi_int = intensity_range
 
 
@@ -211,9 +199,7 @@ def filtered_df(shift=selected_shift):
     ].copy()
 
 
-# ---------------------------------------------------------------------------
 # Summary metrics (top of page)
-# ---------------------------------------------------------------------------
 df_shifted  = df_raw[
     (df_raw["Shift_Type"] == selected_shift) &
     (df_raw["Intensity"] > 0.0)
@@ -250,9 +236,7 @@ with col_m5:
 
 st.markdown("<hr>", unsafe_allow_html=True)
 
-# ---------------------------------------------------------------------------
 # Tabs
-# ---------------------------------------------------------------------------
 tab1, tab2, tab3, tab4 = st.tabs([
     "📈  Performance Curves",
     "🗂️  Comparative Heatmap",
@@ -260,7 +244,6 @@ tab1, tab2, tab3, tab4 = st.tabs([
     "🔬  Distribution Shift",
 ])
 
-# ---- Tab 1: Performance Curves --------------------------------------------
 with tab1:
     st.markdown(
         f"<div class='section-header'>Performance Decay: "
@@ -292,8 +275,8 @@ with tab1:
                       "Robustness_Score", "Relative_Drop_Pct",
                       "Avg_KS_Statistic", "Significant_Shift"]
         cols_show  = [c for c in cols_show if c in mdf_detail.columns]
-        fmt = {c: "{:.4f}" for c in cols_show if mdf_detail[c].dtype == float
-               if c in mdf_detail.columns}
+        fmt = {c: "{:.4f}" for c in cols_show
+               if c in mdf_detail.columns and mdf_detail[c].dtype == float}
         st.dataframe(
             mdf_detail[cols_show].style.format(fmt),
             hide_index=True, use_container_width=True,
@@ -305,7 +288,6 @@ with tab1:
             st.pyplot(fig_band, use_container_width=True)
 
 
-# ---- Tab 2: Comparative Heatmap -------------------------------------------
 with tab2:
     st.markdown(
         f"<div class='section-header'>Model x Intensity Heatmap: "
@@ -340,7 +322,6 @@ with tab2:
         st.info("Relative_Drop_Pct column not present. Re-run experiments.")
 
 
-# ---- Tab 3: Robustness Analysis -------------------------------------------
 with tab3:
     st.markdown(
         f"<div class='section-header'>Robustness Score Ranking: "
@@ -397,7 +378,6 @@ with tab3:
             )
 
 
-# ---- Tab 4: Distribution Shift Diagnostics --------------------------------
 with tab4:
     st.markdown(
         f"<div class='section-header'>KS Statistic and PSI: "
@@ -442,14 +422,13 @@ with tab4:
 
         styled = sig_df[sig_cols].style.format(fmt_sig)
         if "Significant_Shift" in sig_cols:
-            styled = styled.applymap(_color_sig, subset=["Significant_Shift"])
+            styler_apply = getattr(styled, "map", None) or styled.applymap
+            styled = styler_apply(_color_sig, subset=["Significant_Shift"])
         st.dataframe(styled, hide_index=True, use_container_width=True)
     else:
         st.info("Statistical significance data not available.")
 
-# ---------------------------------------------------------------------------
 # Footer
-# ---------------------------------------------------------------------------
 st.markdown("<hr>", unsafe_allow_html=True)
 st.markdown(
     "<div style='text-align:center;color:#475569;font-size:0.80rem;padding-bottom:12px'>"

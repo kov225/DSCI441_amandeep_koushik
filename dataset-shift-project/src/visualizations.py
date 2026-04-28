@@ -48,10 +48,7 @@ _GOOD_METRIC = {"Accuracy", "Precision", "Recall", "F1_Score", "ROC_AUC",
                  "Robustness_Score"}
 
 
-# ---------------------------------------------------------------------------
 # Internal Helpers
-# ---------------------------------------------------------------------------
-
 def _prepare_with_baseline(df: pd.DataFrame, shift_type: str) -> pd.DataFrame:
     """
     Prepends the baseline rows (relabeled to the active shift type) so that
@@ -74,10 +71,7 @@ def _apply_dark_spine(ax):
         spine.set_edgecolor("#3a3f4b")
 
 
-# ---------------------------------------------------------------------------
 # 1. Performance Curves (per model, per shift)
-# ---------------------------------------------------------------------------
-
 def plot_performance_curves(
     results_df: pd.DataFrame,
     shift_type: str,
@@ -136,10 +130,7 @@ def plot_performance_curves(
     return fig
 
 
-# ---------------------------------------------------------------------------
 # 2. Model Heatmap
-# ---------------------------------------------------------------------------
-
 def plot_model_heatmap(
     results_df: pd.DataFrame,
     shift_type: str,
@@ -186,10 +177,7 @@ def plot_model_heatmap(
     return fig
 
 
-# ---------------------------------------------------------------------------
 # 3. Robustness Ranking Bar Chart
-# ---------------------------------------------------------------------------
-
 def plot_robustness_ranking(
     results_df: pd.DataFrame,
     shift_type: str,
@@ -251,10 +239,7 @@ def plot_robustness_ranking(
     return fig
 
 
-# ---------------------------------------------------------------------------
 # 4. Calibration Decay (Brier Score)
-# ---------------------------------------------------------------------------
-
 def plot_calibration_decay(
     results_df: pd.DataFrame,
     shift_type: str,
@@ -277,10 +262,7 @@ def plot_calibration_decay(
                                    metric="Brier_Score", show_ci=True)
 
 
-# ---------------------------------------------------------------------------
 # 5. Distribution Shift Diagnostics (KS + PSI)
-# ---------------------------------------------------------------------------
-
 def plot_ks_psi_curves(
     results_df: pd.DataFrame,
     shift_type: str,
@@ -344,10 +326,7 @@ def plot_ks_psi_curves(
     return fig
 
 
-# ---------------------------------------------------------------------------
 # 6. Confidence Band (Single Model)
-# ---------------------------------------------------------------------------
-
 def plot_confidence_band(
     results_df: pd.DataFrame,
     shift_type: str,
@@ -397,10 +376,7 @@ def plot_confidence_band(
     return fig
 
 
-# ---------------------------------------------------------------------------
 # 7. Relative Drop Heatmap
-# ---------------------------------------------------------------------------
-
 def plot_relative_drop_heatmap(results_df: pd.DataFrame) -> plt.Figure:
     """
     Heatmap of mean percentage accuracy drop (Relative_Drop_Pct) for every
@@ -441,10 +417,7 @@ def plot_relative_drop_heatmap(results_df: pd.DataFrame) -> plt.Figure:
     return fig
 
 
-# ---------------------------------------------------------------------------
 # Save Helper
-# ---------------------------------------------------------------------------
-
 def save_figure(fig: plt.Figure, filename: str) -> str:
     """
     Saves a Figure to the project's figures/ directory.

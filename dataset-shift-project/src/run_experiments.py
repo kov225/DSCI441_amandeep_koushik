@@ -25,6 +25,7 @@ import sys
 import time
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 
 # Make the src directory importable when this script is run directly.
 sys.path.insert(0, os.path.dirname(__file__))
@@ -54,10 +55,7 @@ INTENSITIES = [round(i * 0.1, 1) for i in range(1, 11)]   # 0.1 ... 1.0
 RANDOM_STATE = 42
 
 
-# ---------------------------------------------------------------------------
 # Shift Registry
-# ---------------------------------------------------------------------------
-
 def build_shift_registry(continuous_indices, top_features, X_test, y_test):
     """
     Returns a list of (shift_name, [(intensity, X_shifted, y_shifted), ...])
@@ -129,37 +127,27 @@ def build_shift_registry(continuous_indices, top_features, X_test, y_test):
     return registry
 
 
-# ---------------------------------------------------------------------------
 # Main Pipeline
-# ---------------------------------------------------------------------------
-
 def main():
     set_global_seed(RANDOM_STATE)
     t0 = time.time()
 
-    logger.info("=" * 65)
     logger.info("  Dataset Shift  Milestone 2 Experiment Suite")
-    logger.info("=" * 65)
 
-    # ---- Data ---------------------------------------------------------------
     logger.info("Loading and preprocessing data ...")
     (X_train, X_test, y_train, y_test,
      continuous_indices, _) = load_and_preprocess_data(random_state=RANDOM_STATE)
     logger.info(f"  Train: {X_train.shape}  |  Test: {X_test.shape}")
 
-    # ---- Models -------------------------------------------------------------
     logger.info("Instantiating and training model suite ...")
     trained_models = train_models(get_models(RANDOM_STATE), X_train, y_train)
 
-    # ---- Feature Importance -------------------------------------------------
     logger.info("Computing feature importance for shift targeting ...")
     top_features = get_top_n_features(X_train, y_train, n=5)
     logger.info(f"  Top feature indices: {top_features}")
 
-    # ---- Shared evaluation context ------------------------------------------
     ctx = EvaluationContext()
 
-    # ---- Baseline -----------------------------------------------------------
     logger.info("Evaluating baseline (no shift) ...")
     bl_df = evaluate_models(
         trained_models, X_test, y_test,
@@ -168,7 +156,6 @@ def main():
     )
     all_results = [bl_df]
 
-    # ---- Shift registry -----------------------------------------------------
     registry = build_shift_registry(continuous_indices, top_features,
                                     X_test, y_test)
 
@@ -183,14 +170,12 @@ def main():
             all_results.append(res)
         logger.info(f"  {shift_name} complete.")
 
-    # ---- Consolidate --------------------------------------------------------
     final_df = pd.concat(all_results, ignore_index=True)
     out_path  = get_results_path("experiment_results.csv")
     final_df.to_csv(out_path, index=False)
     logger.info(f"Results saved to {out_path}")
     logger.info(f"Total rows: {len(final_df)}")
 
-    # ---- Auto-save figures --------------------------------------------------
     logger.info("Generating and saving figures ...")
     metrics_to_plot = ["Accuracy", "F1_Score", "ROC_AUC"]
 
